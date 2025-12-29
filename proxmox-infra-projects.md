@@ -1,0 +1,114 @@
+# Proxmox Infrastructure Projects
+
+## Overview
+
+This document outlines a comprehensive Proxmox-based infrastructure architecture designed for DevOps, AI/ML development, and security testing. The architecture is optimized for a system with 16-32GB RAM and leverages both LXC containers and VMs strategically.
+
+---
+
+## Final Architecture
+
+### 1. CI/CD Platform (Dev/Build tier)
+- **Type:** LXC (lightweight, no kernel isolation needed)
+- GitLab (or Gitea + Drone/Woodpecker for lighter option)
+- Container registry
+- Builds, tests, pushes images
+- **RAM:** 3-4GB | **vCPU:** 4
+
+### 2. K8s Platform (Runtime tier)
+- **Type:** 3 VMs (kubeadm needs full kernel control)
+- 1 control plane + 2 workers
+- Receives deployments from CI/CD
+- Runs OpenFaaS/Knative (serverless runtime)
+- **RAM:** 6-8GB total | **vCPU:** 8 total
+
+### 3. DB Cluster (Stateful tier)
+- **Type:** LXC (MongoDB/Postgres run fine in containers)
+- MongoDB replica set (3 instances) OR Postgres + Patroni
+- etcd for election/consensus practice
+- **Serverless functions integrate here:**
+  - Backup jobs (cron-triggered)
+  - ETL pipelines
+  - Data transformations
+- **RAM:** 3-4GB | **vCPU:** 4
+
+### 4. AI/ML Workbench
+- **Type:** VM (GPU passthrough requires full VM)
+- Ollama, ChromaDB, Jupyter, LangChain
+- RAG, embeddings, fine-tuning, agents, MCP
+- **RAM:** 8-12GB | **vCPU:** 8 | **GPU:** Ada passthrough
+
+### 5. Security Lab (Isolated)
+- **Type:** VMs (Kali needs full OS, targets need isolation)
+- Isolated VLAN
+- Kali + vulnerable targets (DVWA, Metasploitable)
+- pfSense/OPNsense for firewall practice
+- **RAM:** 4-6GB | **vCPU:** 6
+
+---
+
+## LXC vs VM Summary
+
+| Environment | Type | Why |
+|-------------|------|-----|
+| CI/CD | LXC | Stateless builds, no special kernel needs |
+| K8s nodes | VM | kubeadm needs kernel modules, cgroups control |
+| DB Cluster | LXC | Databases run fine, saves RAM |
+| AI/ML | VM | GPU passthrough requires VM |
+| Security | VM | Full OS isolation, network segmentation |
+
+---
+
+## Serverless Functions Note
+
+Serverless functions are **not a separate environment** — they're integrated tools that:
+- Live as code in CI/CD (built/pushed there)
+- Run on K8s (OpenFaaS/Knative runtime)
+- **Connect to DB cluster** for backups, ETL, data jobs
+- Can call AI/ML workbench for inference tasks
+
+```
+CI/CD (build) → K8s (run function) → DB Cluster (backup/ETL target)
+                       ↓
+                   AI/ML (inference)
+```
+
+---
+
+## RAM Totals
+
+| Mode | Running | RAM |
+|------|---------|-----|
+| **DevOps** | CI/CD + K8s + DB | ~14GB |
+| **AI** | AI/ML workbench | ~10GB |
+| **Security** | Security lab | ~5GB |
+
+**With 32GB:** DevOps + AI concurrently
+**With 16GB:** One mode at a time
+
+---
+
+## Implementation Strategy
+
+1. **Phase 1:** Set up CI/CD platform (LXC) for foundational automation
+2. **Phase 2:** Deploy K8s cluster (3 VMs) for container orchestration
+3. **Phase 3:** Implement DB cluster (LXC) with serverless integration
+4. **Phase 4:** Configure AI/ML workbench (VM) with GPU passthrough
+5. **Phase 5:** Establish isolated security lab (VMs) with network segmentation
+
+---
+
+## Technology Stack
+
+- **Hypervisor:** Proxmox VE
+- **Container Runtime:** LXC / Kubernetes (containerd)
+- **CI/CD:** GitLab / Gitea + Drone
+- **Orchestration:** Kubernetes (kubeadm)
+- **Serverless:** OpenFaaS / Knative
+- **Databases:** MongoDB / PostgreSQL with Patroni
+- **AI/ML:** Ollama, ChromaDB, Jupyter, LangChain
+- **Security:** Kali Linux, DVWA, Metasploitable, pfSense
+
+---
+
+*Last Updated: 2025-12-30*

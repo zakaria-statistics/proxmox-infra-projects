@@ -1,0 +1,111 @@
+================================================================================
+KUBERNETES PLATFORM SETUP - START HERE
+================================================================================
+
+Welcome! This directory contains everything you need to deploy a Kubernetes
+cluster on Proxmox.
+
+STEP 1: READ THE IMPLEMENTATION GUIDE
+--------------------------------------
+Open IMPLEMENTATION-GUIDE.md to understand:
+  - Complete timeline (4-6 hours total)
+  - Detailed explanations for each step
+  - Why each component is needed
+  - Prerequisites checklist
+
+Command: cat IMPLEMENTATION-GUIDE.md | less
+
+
+STEP 2: REVIEW QUICK REFERENCE
+-------------------------------
+Open QUICK-REFERENCE.md for:
+  - Installation order at a glance
+  - Essential kubectl commands
+  - Common YAML patterns
+  - Troubleshooting commands
+
+Command: cat QUICK-REFERENCE.md | less
+
+
+STEP 3: RUN THE SCRIPTS IN ORDER
+---------------------------------
+Scripts are numbered in execution order. Each script includes:
+  - Detailed comments explaining what it does
+  - Why each command is needed
+  - What to expect as output
+
+On Proxmox Host:
+  cd scripts
+  ./01-create-vms.sh
+
+On ALL VMs (after OS installation):
+  ./02-prepare-os.sh
+  ./03-install-kubernetes.sh
+
+On Control Plane ONLY (VM 201):
+  ./04-init-control-plane.sh
+  ./06a-install-calico.sh
+  ./05-get-join-command.sh
+
+On EACH Worker (VMs 202, 203):
+  Run the join command from step above
+
+Back on Control Plane:
+  ./06b-install-metallb.sh
+  ./06c-install-ingress.sh
+  ./06d-install-storage.sh
+  ./06e-install-openfaas.sh  # Optional
+  ./07-verify-cluster.sh
+  ./08-deploy-test-app.sh
+
+
+STEP 4: REFERENCE CONFIGURATION EXAMPLES
+-----------------------------------------
+See configs/ directory for:
+  - example-deployment.yaml  (How to deploy apps)
+  - example-ingress.yaml     (How to expose apps)
+  - example-pvc.yaml         (How to use storage)
+
+
+NETWORK CONFIGURATION
+---------------------
+Control Plane:   192.168.11.201
+Worker 1:        192.168.11.202
+Worker 2:        192.168.11.203
+Pod Network:     10.244.0.0/16
+MetalLB Pool:    192.168.11.240-250
+
+
+DIRECTORY STRUCTURE
+-------------------
+k8s-platform/
+├── START-HERE.txt              ← You are here
+├── IMPLEMENTATION-GUIDE.md     ← Detailed guide with timeline
+├── QUICK-REFERENCE.md          ← Command cheat sheet
+├── README.md                   ← Project overview
+├── scripts/                    ← All setup scripts (run in order)
+├── configs/                    ← Configuration examples
+└── docs/                       ← Additional documentation
+
+
+GETTING HELP
+------------
+1. Each script has extensive comments - read them!
+2. Check IMPLEMENTATION-GUIDE.md troubleshooting section
+3. Use QUICK-REFERENCE.md for common commands
+4. Check script output for error messages
+
+
+IMPORTANT NOTES
+---------------
+✓ Scripts include safety checks
+✓ Each step explains WHY, not just HOW
+✓ All scripts are executable (chmod +x already done)
+✓ Timeline: Plan for 4-6 hours total
+✓ You'll learn Kubernetes concepts as you go
+
+
+Ready to begin? Start with:
+  cat IMPLEMENTATION-GUIDE.md
+
+================================================================================

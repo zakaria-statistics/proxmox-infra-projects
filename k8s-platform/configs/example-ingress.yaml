@@ -1,0 +1,95 @@
+# Example Ingress Configuration
+# Routes HTTP traffic based on hostname and path
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myapp-ingress
+  namespace: default
+  annotations:
+    # Force HTTPS redirect
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
+
+    # Configure proxy settings
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+
+    # Add custom headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      add_header X-Served-By $hostname;
+
+spec:
+  ingressClassName: nginx
+
+  # Routing rules
+  rules:
+  # Route by hostname
+  - host: myapp.local
+    http:
+      paths:
+      # Route all paths to myapp-service
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp-service
+            port:
+              number: 80
+
+  # Multiple services on same host (path-based routing)
+  - host: multiapp.local
+    http:
+      paths:
+      # API service
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8080
+
+      # Frontend service
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+
+---
+# Example with TLS/SSL (requires certificate)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: myapp-ingress-tls
+  namespace: default
+spec:
+  ingressClassName: nginx
+
+  # TLS configuration
+  tls:
+  - hosts:
+    - secure.myapp.local
+    secretName: myapp-tls-secret  # Create this secret with your cert
+
+  rules:
+  - host: secure.myapp.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: myapp-service
+            port:
+              number: 80
+
+---
+# To create TLS secret (example with self-signed cert):
+#
+# openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+#   -keyout tls.key -out tls.crt -subj "/CN=secure.myapp.local"
+#
+# kubectl create secret tls myapp-tls-secret \
+#   --key tls.key --cert tls.crt -n default

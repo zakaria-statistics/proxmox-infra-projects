@@ -1,0 +1,104 @@
+# Example Kubernetes Deployment
+# This creates a simple web application with 3 replicas
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+  namespace: default
+  labels:
+    app: myapp
+spec:
+  # Number of pod replicas
+  replicas: 3
+
+  # How to identify which pods belong to this deployment
+  selector:
+    matchLabels:
+      app: myapp
+
+  # Template for creating pods
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: web
+        image: nginx:latest
+
+        # Container port
+        ports:
+        - containerPort: 80
+          name: http
+
+        # Resource limits (important for cluster stability)
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+        # Environment variables
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+
+        # Mount persistent storage
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/nginx/html
+
+      # Volume definition
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: myapp-data
+
+---
+# Service: Exposes the deployment
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-service
+  namespace: default
+spec:
+  selector:
+    app: myapp
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  type: LoadBalancer  # Gets external IP from MetalLB
+
+---
+# PersistentVolumeClaim: Request storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: myapp-data
+  namespace: default
+spec:
+  accessModes:
+  - ReadWriteOnce  # Can be mounted by one node at a time
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: local-path  # Uses local-path-provisioner

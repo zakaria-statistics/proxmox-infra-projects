@@ -1,0 +1,119 @@
+# Example Persistent Volume Claims
+# Request storage for your applications
+
+# 1. Simple PVC with default storage class
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-data
+  namespace: default
+spec:
+  # Access mode:
+  # - ReadWriteOnce (RWO): Can be mounted by one node at a time
+  # - ReadOnlyMany (ROX): Can be mounted read-only by many nodes
+  # - ReadWriteMany (RWX): Can be mounted read-write by many nodes
+  accessModes:
+  - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 10Gi
+
+  # Uses default storage class (local-path)
+  # storageClassName: local-path
+
+---
+# 2. PVC for database (larger storage)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: default
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: local-path
+
+---
+# 3. Example Pod using PVC
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-with-storage
+  namespace: default
+spec:
+  containers:
+  - name: app
+    image: nginx
+    volumeMounts:
+    - name: data
+      mountPath: /data
+
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: app-data
+
+---
+# 4. StatefulSet with PVC template (for databases)
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: default
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "changeme"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+
+  # Volume claim template (creates PVC per replica)
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 20Gi
+      storageClassName: local-path
+
+---
+# Usage Examples:
+#
+# 1. List PVCs:
+#    kubectl get pvc
+#
+# 2. Check PVC status:
+#    kubectl describe pvc app-data
+#
+# 3. View bound PV:
+#    kubectl get pv
+#
+# 4. Delete PVC (data is removed!):
+#    kubectl delete pvc app-data
+#
+# 5. Backup data from PVC:
+#    kubectl run backup --image=busybox --rm -it \
+#      --overrides='{"spec":{"containers":[{"name":"backup","image":"busybox","command":["tar","czf","/backup/data.tar.gz","/data"],"volumeMounts":[{"name":"data","mountPath":"/data"}]}],"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"app-data"}}]}}'

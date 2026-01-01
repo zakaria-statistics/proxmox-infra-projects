@@ -1,0 +1,67 @@
+---
+# ResourceQuota to artificially limit CPU in namespace
+# This will cause pod scheduling failures when reaching 10 pods
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: cpu-quota
+  namespace: hpa-demo
+spec:
+  hard:
+    requests.cpu: "1000m"    # Allow only 1 cores total
+    limits.cpu: "1200m"      # Allow only 1.2 cores total
+
+# What this does:
+# - Current pod requests: 200m CPU each
+# - 9 pods = 1800m (fits)
+# - 10 pods = 2000m (EXCEEDS quota → scheduling error)
+#
+# Apply this BEFORE load testing:
+#   kubectl apply -f 06-resource-exhaustion-test.yaml
+#
+# Then run load test - you'll see:
+#   - HPA tries to scale to 10 pods
+#   - 10th pod fails with: "exceeded quota: cpu-quota"
+#   - kubectl describe pod <name> -n hpa-demo shows the error
+#
+# Inspect with:
+#   kubectl describe quota -n hpa-demo
+#   kubectl get events -n hpa-demo --sort-by='.lastTimestamp'
+
+---
+# Alternative: Increase pod CPU requests
+# Uncomment this Deployment to replace the current one
+# This approach works if your nodes have limited CPU
+#
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: php-apache
+#   namespace: hpa-demo
+# spec:
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: php-apache
+#   template:
+#     metadata:
+#       labels:
+#         app: php-apache
+#     spec:
+#       containers:
+#       - name: php-apache
+#         image: registry.k8s.io/hpa-example
+#         ports:
+#         - containerPort: 80
+#         resources:
+#           requests:
+#             cpu: 800m        # 0.8 cores per pod
+#             memory: 128Mi
+#           limits:
+#             cpu: 1000m       # 1 core max
+#             memory: 256Mi
+#
+# With these settings on a 8-core node:
+# - 9 pods = 7200m (fits)
+# - 10 pods = 8000m (exceeds node capacity)
+# - Result: "Insufficient cpu" scheduling error

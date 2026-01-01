@@ -6,6 +6,9 @@
 # Timeline: 1 minute
 ###############################################################################
 
+# kubeadm join 192.168.11.201:6443 --token yaiz1j.hawsz59pjb0223ys \
+#        --discovery-token-ca-cert-hash sha256:24a69cc0430f4f2f757305cb7d89ad1119bdd3930fc65157ef8eb5754b4cf46c
+
 echo "======================================"
 echo "Generate Worker Join Command"
 echo "======================================"

@@ -1,0 +1,128 @@
+---
+# Ingress with TLS Configuration
+# This configures HTTPS termination and routes traffic to the backend Service
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: secure-app-ingress
+  namespace: tls-demo
+  annotations:
+    # Force HTTPS redirect (HTTP → HTTPS)
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Enable SSL passthrough: false (we want TLS termination at Ingress)
+    # nginx.ingress.kubernetes.io/ssl-passthrough: "false"
+spec:
+  ingressClassName: nginx
+
+  # TLS Configuration
+  tls:
+  - hosts:
+    - secure-app.local  # Domain name in certificate
+    secretName: secure-app-tls  # References the Secret we created
+
+  # Routing Rules
+  rules:
+  - host: secure-app.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: secure-app
+            port:
+              number: 80
+
+---
+# How TLS termination works:
+#
+# 1. Client (browser) requests: https://secure-app.local
+#    - DNS resolves to: 192.168.11.240 (Ingress Controller LoadBalancer IP)
+#    - Client initiates TLS handshake on port 443
+#
+# 2. Ingress Controller (nginx):
+#    - Receives TLS connection
+#    - Reads Secret: secure-app-tls
+#    - Sends tls.crt to client (public certificate)
+#    - Uses tls.key to decrypt client's message (private key)
+#    - TLS handshake complete → encrypted channel established
+#
+# 3. Ingress decrypts HTTPS request:
+#    - Client sends encrypted HTTP request
+#    - Ingress uses tls.key to decrypt
+#    - Now has plaintext: GET / HTTP/1.1
+#
+# 4. Ingress forwards to backend:
+#    - Forwards HTTP (NOT HTTPS) to Service: secure-app:80
+#    - Internal cluster traffic is unencrypted
+#
+# 5. Backend Service responds:
+#    - secure-app pods send HTTP response
+#    - Ingress receives HTTP response
+#
+# 6. Ingress encrypts response:
+#    - Uses TLS session from step 2
+#    - Encrypts HTTP response
+#    - Sends encrypted response to client
+#
+# 7. Client receives HTTPS response:
+#    - Browser shows 🔒 (secure connection)
+#    - Certificate may show warning (self-signed)
+
+---
+# Annotations explained:
+#
+# nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+#   - Redirects HTTP → HTTPS
+#   - If user visits http://secure-app.local, redirected to https://
+#   - Returns 308 Permanent Redirect
+#
+# nginx.ingress.kubernetes.io/ssl-passthrough: "false" (default)
+#   - TLS terminated at Ingress (decrypt here)
+#   - Alternative: "true" = pass encrypted traffic to backend (backend handles TLS)
+#   - We use "false" for edge termination
+
+---
+# Multiple domains (SNI - Server Name Indication):
+#
+# spec:
+#   tls:
+#   - hosts:
+#     - app1.local
+#     secretName: app1-tls  # Certificate for app1.local
+#   - hosts:
+#     - app2.local
+#     secretName: app2-tls  # Certificate for app2.local
+#   rules:
+#   - host: app1.local
+#     http:
+#       paths: [...]
+#   - host: app2.local
+#     http:
+#       paths: [...]
+#
+# How SNI works:
+#   1. Client connects and sends hostname in TLS handshake
+#   2. Ingress selects certificate based on hostname
+#   3. Different domains → different certificates
+
+---
+# Native resources:
+#   - Ingress: secure-app-ingress
+#   - References Secret: secure-app-tls
+#   - References Service: secure-app
+#   - Ingress Controller (already deployed) handles actual traffic
+#
+# Inspect with:
+#   kubectl get ingress -n tls-demo
+#   kubectl describe ingress secure-app-ingress -n tls-demo
+#
+# Check TLS configuration:
+#   kubectl get ingress secure-app-ingress -n tls-demo -o yaml
+#   # Look for spec.tls section
+#
+# Verify Ingress Controller loaded certificate:
+#   kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller --tail=50
+#   # Should see: "successfully validated configuration, accepting"
+#   # No errors about missing Secrets

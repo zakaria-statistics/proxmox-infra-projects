@@ -1,0 +1,274 @@
+===============================================================================
+WORKER VMs CLOUD-INIT SETUP GUIDE
+===============================================================================
+
+CURRENT SITUATION:
+------------------
+- ✅ Control plane (VM 201) - Already installed and configured
+- ❌ Worker VMs (202, 203) - Created but OS not installed (live ISO attached)
+
+WHAT YOU NEED TO DO:
+--------------------
+You need to RECREATE worker VMs with cloud-init because:
+- Current VMs have live server ISO (for manual installation)
+- Cloud-init requires Ubuntu Cloud Image (pre-installed OS image)
+- Can't convert existing VMs - must recreate
+
+
+===============================================================================
+OPTION 1: AUTOMATED (Recommended - 5 minutes total)
+===============================================================================
+
+Run this script:
+  cd /root/claude/k8s-platform/scripts
+  chmod +x 00-create-workers-cloudinit.sh
+  ./00-create-workers-cloudinit.sh
+
+What it does:
+  1. Destroys existing VMs 202, 203 (asks for confirmation)
+  2. Downloads cloud image (if not already downloaded)
+  3. Creates both worker VMs with cloud-init
+  4. Configures static IPs, SSH keys, user account
+  5. Optionally starts VMs
+
+After script finishes:
+  # Wait 2-3 minutes for cloud-init to complete
+
+  # Test SSH access
+  ssh k8s-worker-01
+  ssh k8s-worker-02
+
+  # Continue with Kubernetes setup (see below)
+
+
+===============================================================================
+OPTION 2: MANUAL COMMANDS (if you prefer step-by-step)
+===============================================================================
+
+Step 1: Destroy existing VMs
+-----------------------------
+qm stop 202
+qm stop 203
+qm destroy 202
+qm destroy 203
+
+
+Step 2: Download cloud image (if not already downloaded)
+---------------------------------------------------------
+cd /var/lib/vz/template/iso
+wget https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img
+
+
+Step 3: Create VM 202 (Worker 1)
+---------------------------------
+# Create VM
+qm create 202 \
+  --name k8s-worker-01 \
+  --memory 3072 \
+  --cores 3 \
+  --cpu host \
+  --net0 virtio,bridge=vmbr0 \
+  --serial0 socket \
+  --vga serial0 \
+  --agent enabled=1 \
+  --ostype l26
+
+# Import cloud image
+qm importdisk 202 /var/lib/vz/template/iso/ubuntu-22.04-server-cloudimg-amd64.img local-lvm
+
+# Attach disk
+qm set 202 --scsihw virtio-scsi-pci
+qm set 202 --scsi0 local-lvm:vm-202-disk-0
+
+# Resize disk
+qm resize 202 scsi0 40G
+
+# Add cloud-init drive
+qm set 202 --ide2 local-lvm:cloudinit
+
+# Set boot disk
+qm set 202 --boot order=scsi0
+
+# Configure cloud-init
+qm set 202 --ciuser k8sadmin
+qm set 202 --cipassword $(openssl rand -base64 12)
+qm set 202 --sshkeys ~/.ssh/k8s_cluster.pub
+qm set 202 --ipconfig0 ip=192.168.11.202/24,gw=192.168.11.1
+qm set 202 --nameserver "8.8.8.8 8.8.4.4"
+
+
+Step 4: Create VM 203 (Worker 2)
+---------------------------------
+# Create VM
+qm create 203 \
+  --name k8s-worker-02 \
+  --memory 3072 \
+  --cores 3 \
+  --cpu host \
+  --net0 virtio,bridge=vmbr0 \
+  --serial0 socket \
+  --vga serial0 \
+  --agent enabled=1 \
+  --ostype l26
+
+# Import cloud image
+qm importdisk 203 /var/lib/vz/template/iso/ubuntu-22.04-server-cloudimg-amd64.img local-lvm
+
+# Attach disk
+qm set 203 --scsihw virtio-scsi-pci
+qm set 203 --scsi0 local-lvm:vm-203-disk-0
+
+# Resize disk
+qm resize 203 scsi0 40G
+
+# Add cloud-init drive
+qm set 203 --ide2 local-lvm:cloudinit
+
+# Set boot disk
+qm set 203 --boot order=scsi0
+
+# Configure cloud-init
+qm set 203 --ciuser k8sadmin
+qm set 203 --cipassword $(openssl rand -base64 12)
+qm set 203 --sshkeys ~/.ssh/k8s_cluster.pub
+qm set 203 --ipconfig0 ip=192.168.11.203/24,gw=192.168.11.1
+qm set 203 --nameserver "8.8.8.8 8.8.4.4"
+
+
+Step 5: Start VMs
+-----------------
+qm start 202
+qm start 203
+
+# Wait 2-3 minutes for cloud-init to finish
+
+
+Step 6: Test SSH
+-----------------
+ssh k8s-worker-01
+ssh k8s-worker-02
+
+
+===============================================================================
+AFTER VMs ARE READY - KUBERNETES SETUP
+===============================================================================
+
+Step 1: Copy scripts to worker VMs
+-----------------------------------
+scp /root/claude/k8s-platform/scripts/*.sh k8sadmin@192.168.11.202:~
+scp /root/claude/k8s-platform/scripts/*.sh k8sadmin@192.168.11.203:~
+
+
+Step 2: Prepare OS on each worker
+----------------------------------
+ssh k8s-worker-01
+sudo ./02-prepare-os.sh
+exit
+
+ssh k8s-worker-02
+sudo ./02-prepare-os.sh
+exit
+
+
+Step 3: Install Kubernetes on each worker
+------------------------------------------
+ssh k8s-worker-01
+sudo ./03-install-kubernetes.sh
+exit
+
+ssh k8s-worker-02
+sudo ./03-install-kubernetes.sh
+exit
+
+
+Step 4: Get join command from control plane
+--------------------------------------------
+ssh k8s-control
+./05-get-join-command.sh
+# Copy the "kubeadm join" command output
+
+
+Step 5: Join workers to cluster
+--------------------------------
+ssh k8s-worker-01
+sudo [paste kubeadm join command here]
+exit
+
+ssh k8s-worker-02
+sudo [paste kubeadm join command here]
+exit
+
+
+Step 6: Verify nodes joined (from control plane)
+-------------------------------------------------
+ssh k8s-control
+kubectl get nodes
+
+# Should show:
+# k8s-control    Ready    control-plane   Xm   v1.28.x
+# k8s-worker-01  Ready    <none>          Xm   v1.28.x
+# k8s-worker-02  Ready    <none>          Xm   v1.28.x
+
+
+===============================================================================
+TROUBLESHOOTING
+===============================================================================
+
+VM doesn't get IP after boot:
+------------------------------
+# SSH using IP directly
+ssh k8sadmin@192.168.11.202
+
+# Check cloud-init status
+cloud-init status
+
+# View logs
+sudo cat /var/log/cloud-init.log
+
+
+SSH key not working:
+--------------------
+# Verify key was injected
+qm cloudinit dump 202 user
+
+# Inside VM, check authorized_keys
+ssh k8sadmin@192.168.11.202  # Use password if needed
+cat ~/.ssh/authorized_keys
+
+
+Need to recreate a VM:
+----------------------
+qm stop 202
+qm destroy 202
+# Then run create commands again
+
+
+===============================================================================
+WHY CLOUD-INIT VS MANUAL?
+===============================================================================
+
+Manual Installation (what you did for control plane):
+  - 30 minutes per VM
+  - Click through UI installer
+  - Manual network config
+  - Add SSH keys after install
+  - Total: ~60 minutes for 2 workers
+
+Cloud-Init (automated):
+  - 2 minutes per VM
+  - Run one script
+  - Auto-configured network, SSH, user
+  - Pre-installed OS (no installation!)
+  - Total: ~5 minutes for 2 workers
+
+Since control plane is already done manually, use cloud-init for workers
+to save time and ensure consistency.
+
+
+===============================================================================
+FILES REFERENCE
+===============================================================================
+
+Script:  /root/claude/k8s-platform/scripts/00-create-workers-cloudinit.sh
+Guide:   /root/worker-vms-cloudinit-setup.txt (this file)
+General: /root/automated-vm-setup.md (cloud-init explained)

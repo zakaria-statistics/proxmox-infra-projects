@@ -1,0 +1,72 @@
+---
+# Namespace for HPA practice
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hpa-demo
+
+---
+# Deployment with resource requests/limits
+# HPA will scale this based on CPU utilization
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+  namespace: hpa-demo
+spec:
+  replicas: 1  # Start with 1 replica
+  selector:
+    matchLabels:
+      app: php-apache
+  template:
+    metadata:
+      labels:
+        app: php-apache
+    spec:
+      containers:
+      - name: php-apache
+        image: registry.k8s.io/hpa-example
+        ports:
+        - containerPort: 80
+        resources:
+          # CRITICAL: HPA needs resource requests to calculate CPU %
+          requests:
+            cpu: 200m        # 200 millicores (0.2 cores)
+            memory: 64Mi     # 64 mebibytes
+          limits:
+            cpu: 500m        # Max 0.5 cores
+            memory: 128Mi    # Max 128Mi
+
+---
+# Service to expose the application
+# HPA doesn't need this, but we do for load testing
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache
+  namespace: hpa-demo
+spec:
+  selector:
+    app: php-apache
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
+
+---
+# What this application does:
+# - Runs a PHP script that performs CPU-intensive calculations
+# - Each request does some computation (sqrt, pow operations)
+# - Perfect for triggering CPU-based autoscaling
+#
+# Native resources created:
+# - Namespace: hpa-demo (isolation)
+# - Deployment: php-apache (manages pods)
+# - ReplicaSet: (created by Deployment, manages 1 pod initially)
+# - Pod: php-apache-xxxxx (runs the container)
+# - Service: php-apache (load balances to pods)
+#
+# Inspect with:
+#   kubectl get all -n hpa-demo
+#   kubectl describe deployment php-apache -n hpa-demo
+#   kubectl top pod -n hpa-demo

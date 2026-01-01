@@ -1,0 +1,52 @@
+---
+# Heavy Load Generator Pod
+# Sends 10 parallel request streams to php-apache
+apiVersion: v1
+kind: Pod
+metadata:
+  name: load-generator
+  namespace: hpa-demo
+spec:
+  containers:
+  - name: load-generator
+    image: busybox:1.28
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+    command:
+    - /bin/sh
+    - -c
+    - |
+      while true; do
+        wget -q -O- http://php-apache &
+        wget -q -O- http://php-apache &
+        wget -q -O- http://php-apache &
+        wget -q -O- http://php-apache &
+        wget -q -O- http://php-apache &
+        wget -q -O- http://php-apache &
+        wget -q -O- http://php-apache &
+        wget -q -O- http://php-apache &
+        wget -q -O- http://php-apache &
+        wget -q -O- http://php-apache &
+        wait
+      done
+  restartPolicy: Never
+
+# Apply with:
+#   kubectl apply -f 04-load-generator.yaml
+#
+# Watch logs:
+#   kubectl logs -f load-generator -n hpa-demo
+#
+# Stop load:
+#   kubectl delete pod load-generator -n hpa-demo
+#
+# This pod will:
+# - Run 10 parallel wget requests continuously
+# - Consume minimal CPU itself (100m request)
+# - Generate heavy load on php-apache service
+# - Trigger HPA to scale up

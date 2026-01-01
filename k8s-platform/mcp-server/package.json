@@ -1,0 +1,29 @@
+{
+  "name": "k8s-mcp-server-custom",
+  "version": "1.0.0",
+  "description": "Custom Kubernetes MCP Server for natural language cluster management",
+  "main": "server.js",
+  "type": "module",
+  "bin": {
+    "k8s-mcp-server": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node server.js --test"
+  },
+  "keywords": [
+    "kubernetes",
+    "k8s",
+    "mcp",
+    "claude",
+    "kubectl"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

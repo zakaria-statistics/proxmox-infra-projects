@@ -1,0 +1,80 @@
+---
+# HPA (Horizontal Pod Autoscaler)
+# Watches CPU metrics and scales the Deployment up/down
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: php-apache-hpa
+  namespace: hpa-demo
+spec:
+  # What to scale
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: php-apache
+
+  # Replica boundaries
+  minReplicas: 1   # Never scale below 1
+  maxReplicas: 10  # Never scale above 10
+
+  # Scaling metrics
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50  # Target: 50% of requested CPU
+
+  # Optional: Scaling behavior (v2 API)
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 min before scaling down
+      policies:
+      - type: Percent
+        value: 50  # Scale down max 50% of current replicas
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+      policies:
+      - type: Percent
+        value: 100  # Double replicas if needed
+        periodSeconds: 15
+      - type: Pods
+        value: 4  # Or add max 4 pods
+        periodSeconds: 15
+      selectPolicy: Max  # Use whichever adds more pods
+
+---
+# How HPA works:
+#
+# 1. Every 15 seconds (default):
+#    - Queries Metrics Server for current CPU usage
+#    - Gets all pods in the Deployment
+#    - Calculates average CPU utilization
+#
+# 2. Compares to target (50%):
+#    currentUtilization / targetUtilization = scalingRatio
+#
+# 3. Calculates desired replicas:
+#    desiredReplicas = ceil[currentReplicas * scalingRatio]
+#
+# 4. Updates Deployment:
+#    - If desiredReplicas > current: Scale up
+#    - If desiredReplicas < current: Scale down (after stabilization window)
+#    - Respects minReplicas and maxReplicas
+#
+# Example calculation:
+#   Current: 1 replica using 200m CPU (100% of 200m request)
+#   Target: 50% (100m)
+#   Ratio: 200m / 100m = 2.0
+#   Desired: ceil[1 * 2.0] = 2 replicas
+#
+# Native resources:
+#   - HPA resource (this YAML)
+#   - No new pods/deployments - HPA just modifies existing Deployment's replicas
+#
+# Inspect with:
+#   kubectl get hpa -n hpa-demo
+#   kubectl describe hpa php-apache-hpa -n hpa-demo
+#   kubectl get hpa -n hpa-demo --watch  # Live updates

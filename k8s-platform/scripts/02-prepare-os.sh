@@ -47,7 +47,7 @@ echo
 swapoff -a
 
 # Comment out swap entries in fstab to persist across reboots
-sed -i '/ swap / s/^/#/' /etc/fstab
+sed -i 's|^/swap\.img|#/swap.img|' /etc/fstab
 
 # Verify swap is off
 if [ "$(swapon -s | wc -l)" -eq 0 ]; then
@@ -56,6 +56,8 @@ else
     echo "✗ Failed to disable swap"
     exit 1
 fi
+swapon --show
+free -h
 echo
 
 # ============================================================================

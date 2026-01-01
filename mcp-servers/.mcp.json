@@ -1,0 +1,36 @@
+{
+  "mcpServers": {
+    "k8s-custom": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/root/claude/mcp-servers/k8s-mcp/server.js",
+        "--kubeconfig",
+        "/root/.kube/config"
+      ],
+      "disabled": true
+    },
+    "docker": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/root/claude/mcp-servers/docker-mcp/server.js"],
+      "disabled": true
+    },
+    "security": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["/root/claude/mcp-servers/security-mcp/server.js"],
+      "disabled": true
+    },
+    "proxmox": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/root/claude/mcp-servers/proxmox-mcp/server.js",
+        "--host",
+        "your-proxmox-host"
+      ],
+      "disabled": true
+    }
+  }
+}

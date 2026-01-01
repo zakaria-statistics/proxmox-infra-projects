@@ -62,7 +62,7 @@ echo "  5. Marks this node as control plane (taint prevents regular pods)"
 echo
 echo "Command flags explained:"
 echo "  --pod-network-cidr=10.244.0.0/16"
-echo "    → IP range for pods (NOT your physical network!)"
+echo "    → IP range for pods (NOT your physical network)"
 echo "    → 10.244.0.0/16 gives 65,536 IP addresses for pods"
 echo "    → Required by Calico/Flannel CNI plugins"
 echo

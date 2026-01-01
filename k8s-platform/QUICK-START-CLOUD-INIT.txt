@@ -1,0 +1,39 @@
+================================================================================
+QUICK START: Automated VM Setup with Cloud-Init
+================================================================================
+
+FASTEST WAY TO CREATE K8S VMs - 6 MINUTES TOTAL!
+
+1. RUN THE SCRIPT:
+   cd /root/claude/k8s-platform/scripts
+   ./00-create-vms-cloudinit.sh
+
+2. WAIT FOR VMs TO BOOT (2 minutes)
+
+3. TEST SSH:
+   ssh k8s-control        # Passwordless!
+   ssh k8s-worker-01
+   ssh k8s-worker-02
+
+4. COPY SCRIPTS:
+   for ip in 192.168.11.201 192.168.11.202 192.168.11.203; do
+     scp /root/claude/k8s-platform/scripts/*.sh k8sadmin@$ip:~
+   done
+
+5. CONTINUE WITH K8S SETUP:
+   ssh k8s-control
+   sudo ./02-prepare-os.sh
+   sudo ./03-install-kubernetes.sh
+
+THAT'S IT! No manual installation needed!
+
+Benefits:
+  ✓ 10x faster than manual installation
+  ✓ Consistent configuration across all VMs
+  ✓ SSH keys pre-installed
+  ✓ Static IPs pre-configured
+  ✓ Ready to use in minutes
+
+Full documentation: /root/automated-vm-setup.md
+
+================================================================================

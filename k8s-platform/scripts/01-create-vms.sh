@@ -104,22 +104,68 @@ qm create 203 \
 echo "✓ Worker node 2 created (ID: 203)"
 echo
 
+# ============================================================================
+echo "======================================"
+echo "ISO Attachment"
+echo "======================================"
+echo
+echo -e "${BLUE}What happens now:${NC}"
+echo "  1. VMs are created with empty disks (no OS yet)"
+echo "  2. ISO file is attached as virtual CD/DVD drive"
+echo "  3. VMs will boot from ISO to install Ubuntu"
+echo "  4. After installation, Ubuntu runs from disk"
+echo
+echo -e "${BLUE}Checking for Ubuntu 22.04 ISO...${NC}"
+
+# Look for any Ubuntu 22.04 ISO
+ISO_FILE=$(ls /var/lib/vz/template/iso/ubuntu-22.04*-live-server-amd64.iso 2>/dev/null | head -1)
+
+if [ -n "$ISO_FILE" ]; then
+    ISO_NAME=$(basename "$ISO_FILE")
+    echo -e "${GREEN}✓ Found: $ISO_NAME${NC}"
+    echo
+    echo "Attaching ISO to VMs as virtual CD-ROM..."
+    echo "  Why --ide2: CD-ROM device slot for boot media"
+    echo "  Why media=cdrom: Tells VM this is a CD/DVD drive"
+    echo
+
+    # Attach ISO to each VM
+    qm set 201 --ide2 $ISO_STORAGE:iso/$ISO_NAME,media=cdrom
+    echo "  ✓ VM 201 (k8s-control): ISO attached"
+
+    qm set 202 --ide2 $ISO_STORAGE:iso/$ISO_NAME,media=cdrom
+    echo "  ✓ VM 202 (k8s-worker-01): ISO attached"
+
+    qm set 203 --ide2 $ISO_STORAGE:iso/$ISO_NAME,media=cdrom
+    echo "  ✓ VM 203 (k8s-worker-02): ISO attached"
+
+    echo
+    echo -e "${GREEN}✓ All VMs ready to boot from ISO${NC}"
+else
+    echo -e "${YELLOW}⚠ No Ubuntu 22.04 ISO found in /var/lib/vz/template/iso/${NC}"
+    echo
+    echo "Download Ubuntu ISO first:"
+    echo "  cd /var/lib/vz/template/iso"
+    echo "  wget https://releases.ubuntu.com/22.04/ubuntu-22.04.5-live-server-amd64.iso"
+    echo
+    echo "Then attach to VMs:"
+    echo "  qm set 201 --ide2 local:iso/ubuntu-22.04.5-live-server-amd64.iso,media=cdrom"
+    echo "  qm set 202 --ide2 local:iso/ubuntu-22.04.5-live-server-amd64.iso,media=cdrom"
+    echo "  qm set 203 --ide2 local:iso/ubuntu-22.04.5-live-server-amd64.iso,media=cdrom"
+    echo
+    echo -e "${YELLOW}Skipping automatic ISO attachment...${NC}"
+fi
+
+echo
+
 # Summary
 echo "======================================"
 echo "VM Creation Complete!"
 echo "======================================"
 echo
 echo "Next Steps:"
-echo "1. Download Ubuntu 22.04 LTS Server ISO to Proxmox:"
-echo "   cd /var/lib/vz/template/iso"
-echo "   wget https://releases.ubuntu.com/22.04/ubuntu-22.04.3-live-server-amd64.iso"
 echo
-echo "2. Attach ISO to each VM and install OS:"
-echo "   qm set 201 --ide2 $ISO_STORAGE:iso/ubuntu-22.04.3-live-server-amd64.iso,media=cdrom"
-echo "   qm set 202 --ide2 $ISO_STORAGE:iso/ubuntu-22.04.3-live-server-amd64.iso,media=cdrom"
-echo "   qm set 203 --ide2 $ISO_STORAGE:iso/ubuntu-22.04.3-live-server-amd64.iso,media=cdrom"
-echo
-echo "3. Start VMs and install Ubuntu with these settings:"
+echo "1. Start VMs and install Ubuntu:"
 echo "   - VM 201: IP 192.168.11.201, hostname k8s-control"
 echo "   - VM 202: IP 192.168.11.202, hostname k8s-worker-01"
 echo "   - VM 203: IP 192.168.11.203, hostname k8s-worker-02"
@@ -128,7 +174,13 @@ echo "   - DNS: 8.8.8.8 or your router IP"
 echo "   - Enable OpenSSH server during installation"
 echo "   - Create user: k8sadmin (or your preference)"
 echo
-echo "4. After OS installation, run 02-prepare-os.sh on EACH VM"
+echo
+echo "2. After OS installation, remove ISO (optional):"
+echo "   qm set 201 --delete ide2"
+echo "   qm set 202 --delete ide2"
+echo "   qm set 203 --delete ide2"
+echo
+echo "3. Then run 02-prepare-os.sh on EACH VM"
 echo
 
 # Optional: Start VMs

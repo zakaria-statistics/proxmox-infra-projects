@@ -160,6 +160,14 @@ ss -s
 netstat -ant | awk '{print $6}' | sort | uniq -c
 ```
 
+## Check Ports (Netcat)
+```bash
+# Check local Proxmox Web UI & SSH
+nc -zv localhost 8006
+nc -zv localhost 22
+```
+
+
 ## ARP Table
 
 ### Show ARP cache

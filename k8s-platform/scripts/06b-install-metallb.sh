@@ -48,6 +48,10 @@ echo "  - On the same subnet as your nodes (192.168.11.0/24)"
 echo "  - Not used by other devices"
 echo
 
+nmap --script broadcast-dhcp-discover
+nmap -sn 192.168.11.240-250
+
+
 read -p "Continue with these IP ranges? (y/n) " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then

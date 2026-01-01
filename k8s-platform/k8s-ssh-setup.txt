@@ -1,0 +1,68 @@
+================================================================================
+Kubernetes Cluster SSH Setup
+================================================================================
+
+PUBLIC KEY (Copy this during Ubuntu installation):
+---------------------------------------------------
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKfwbfJx4ss2PtkxLy4EI4jL9mgerzhN1hkm+qmhUarv proxmox-k8s-cluster
+
+================================================================================
+
+DURING UBUNTU INSTALLATION:
+---------------------------
+1. When you reach "SSH Setup" screen:
+   ☑ Install OpenSSH server
+   ☑ Import SSH identity
+   
+2. Paste the public key above when prompted
+
+3. Select:
+   ☑ Allow password authentication over SSH (recommended for backup access)
+
+
+AFTER INSTALLATION - SSH FROM PROXMOX:
+---------------------------------------
+# Use the private key to connect (passwordless):
+ssh -i ~/.ssh/k8s_cluster k8sadmin@192.168.11.201
+ssh -i ~/.ssh/k8s_cluster k8sadmin@192.168.11.202
+ssh -i ~/.ssh/k8s_cluster k8sadmin@192.168.11.203
+
+
+CONFIGURE SSH FOR EASY ACCESS:
+-------------------------------
+Add to ~/.ssh/config:
+
+Host k8s-control
+    HostName 192.168.11.201
+    User k8sadmin
+    IdentityFile ~/.ssh/k8s_cluster
+
+Host k8s-worker-01
+    HostName 192.168.11.202
+    User k8sadmin
+    IdentityFile ~/.ssh/k8s_cluster
+
+Host k8s-worker-02
+    HostName 192.168.11.203
+    User k8sadmin
+    IdentityFile ~/.ssh/k8s_cluster
+
+Then connect simply with:
+    ssh k8s-control
+    ssh k8s-worker-01
+    ssh k8s-worker-02
+
+
+COPY SCRIPTS TO VMs:
+--------------------
+scp -i ~/.ssh/k8s_cluster /root/claude/k8s-platform/scripts/*.sh k8sadmin@192.168.11.201:~
+scp -i ~/.ssh/k8s_cluster /root/claude/k8s-platform/scripts/*.sh k8sadmin@192.168.11.202:~
+scp -i ~/.ssh/k8s_cluster /root/claude/k8s-platform/scripts/*.sh k8sadmin@192.168.11.203:~
+
+
+FILE LOCATIONS:
+---------------
+Private key: /root/.ssh/k8s_cluster      (KEEP SECURE!)
+Public key:  /root/.ssh/k8s_cluster.pub  (Safe to share)
+
+================================================================================

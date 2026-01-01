@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "k8s": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-kubernetes",
+        "--kubeconfig",
+        "/root/.kube/config"
+      ]
+    }
+  }
+}

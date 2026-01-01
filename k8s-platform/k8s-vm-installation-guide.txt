@@ -1,0 +1,290 @@
+================================================================================
+KUBERNETES VMs INSTALLATION CONFIGURATION GUIDE
+================================================================================
+
+This guide contains exact settings for installing Ubuntu 22.04 on all 3 VMs.
+Follow these settings during the Ubuntu Server installation wizard.
+
+================================================================================
+VM 201: k8s-control (Control Plane)
+================================================================================
+
+1. LANGUAGE & KEYBOARD
+   Language: English
+   Keyboard layout: English (US)  [or your preference]
+
+2. NETWORK CONFIGURATION
+   Interface: ens18
+
+   Select: Manual configuration (NOT DHCP)
+
+   Subnet:        192.168.11.0/24
+   Address:       192.168.11.201
+   Gateway:       192.168.11.1
+   Name servers:  8.8.8.8,8.8.4.4
+   Search domains: (leave blank)
+
+3. PROXY
+   Proxy address: (leave blank - no proxy)
+
+4. MIRROR
+   Mirror address: (leave default)
+   Or use: http://archive.ubuntu.com/ubuntu
+
+5. STORAGE CONFIGURATION
+   Storage layout: Use an entire disk
+
+   Disk: /dev/sda (or first available disk)
+
+   ☐ Set up this disk as an LVM group (UNCHECK - don't use LVM)
+
+   File system summary:
+   - /boot/efi    512M   (EFI partition)
+   - /            rest   (root partition, ext4)
+
+   Confirm destructive action: Continue
+
+6. PROFILE SETUP
+   Your name:          K8s Admin
+   Your server's name: k8s-control
+   Pick a username:    k8sadmin
+   Choose a password:  [CREATE-STRONG-PASSWORD]
+   Confirm password:   [SAME-PASSWORD]
+
+   IMPORTANT: Use SAME username (k8sadmin) and password on ALL VMs!
+
+7. SSH SETUP
+   ☑ Install OpenSSH server         (CHECK THIS!)
+   ☐ Import SSH identity             (SKIP - we'll add keys after)
+   ☑ Allow password authentication  (KEEP CHECKED)
+
+8. FEATURED SERVER SNAPS
+   ☐ docker      (DO NOT install)
+   ☐ microk8s    (DO NOT install)
+   ☐ lxd         (DO NOT install)
+   ☐ ALL OTHERS  (DO NOT install anything)
+
+   Leave ALL unchecked - we'll install everything manually
+
+9. INSTALLATION
+   - Wait for installation to complete
+   - Select "Reboot Now"
+   - Press ENTER when prompted to remove installation media
+
+================================================================================
+VM 202: k8s-worker-01 (Worker Node 1)
+================================================================================
+
+1. LANGUAGE & KEYBOARD
+   Language: English
+   Keyboard layout: English (US)  [same as VM 201]
+
+2. NETWORK CONFIGURATION
+   Interface: ens18
+
+   Select: Manual configuration
+
+   Subnet:        192.168.11.0/24
+   Address:       192.168.11.202          ← DIFFERENT!
+   Gateway:       192.168.11.1
+   Name servers:  8.8.8.8,8.8.4.4
+   Search domains: (leave blank)
+
+3. PROXY
+   Proxy address: (leave blank)
+
+4. MIRROR
+   Mirror address: (leave default)
+
+5. STORAGE CONFIGURATION
+   Storage layout: Use an entire disk
+   Disk: /dev/sda
+   ☐ Set up this disk as an LVM group (UNCHECK)
+   Confirm: Continue
+
+6. PROFILE SETUP
+   Your name:          K8s Admin
+   Your server's name: k8s-worker-01      ← DIFFERENT!
+   Pick a username:    k8sadmin            ← SAME!
+   Choose a password:  [SAME-PASSWORD]     ← SAME!
+   Confirm password:   [SAME-PASSWORD]
+
+7. SSH SETUP
+   ☑ Install OpenSSH server
+   ☐ Import SSH identity
+   ☑ Allow password authentication
+
+8. FEATURED SERVER SNAPS
+   ☐ ALL (leave everything unchecked)
+
+9. INSTALLATION
+   - Wait and reboot
+
+================================================================================
+VM 203: k8s-worker-02 (Worker Node 2)
+================================================================================
+
+1. LANGUAGE & KEYBOARD
+   Language: English
+   Keyboard layout: English (US)  [same as others]
+
+2. NETWORK CONFIGURATION
+   Interface: ens18
+
+   Select: Manual configuration
+
+   Subnet:        192.168.11.0/24
+   Address:       192.168.11.203          ← DIFFERENT!
+   Gateway:       192.168.11.1
+   Name servers:  8.8.8.8,8.8.4.4
+   Search domains: (leave blank)
+
+3. PROXY
+   Proxy address: (leave blank)
+
+4. MIRROR
+   Mirror address: (leave default)
+
+5. STORAGE CONFIGURATION
+   Storage layout: Use an entire disk
+   Disk: /dev/sda
+   ☐ Set up this disk as an LVM group (UNCHECK)
+   Confirm: Continue
+
+6. PROFILE SETUP
+   Your name:          K8s Admin
+   Your server's name: k8s-worker-02      ← DIFFERENT!
+   Pick a username:    k8sadmin            ← SAME!
+   Choose a password:  [SAME-PASSWORD]     ← SAME!
+   Confirm password:   [SAME-PASSWORD]
+
+7. SSH SETUP
+   ☑ Install OpenSSH server
+   ☐ Import SSH identity
+   ☑ Allow password authentication
+
+8. FEATURED SERVER SNAPS
+   ☐ ALL (leave everything unchecked)
+
+9. INSTALLATION
+   - Wait and reboot
+
+================================================================================
+QUICK REFERENCE TABLE
+================================================================================
+
+Setting          | VM 201         | VM 202           | VM 203
+-----------------|----------------|------------------|------------------
+Hostname         | k8s-control    | k8s-worker-01    | k8s-worker-02
+IP Address       | 192.168.11.201 | 192.168.11.202   | 192.168.11.203
+Gateway          | 192.168.11.1   | 192.168.11.1     | 192.168.11.1
+DNS              | 8.8.8.8        | 8.8.8.8          | 8.8.8.8
+Username         | k8sadmin       | k8sadmin         | k8sadmin
+Password         | [SAME-PASSWORD-FOR-ALL-VMs]
+Interface        | ens18          | ens18            | ens18
+Subnet           | 192.168.11.0/24| 192.168.11.0/24  | 192.168.11.0/24
+
+================================================================================
+AFTER INSTALLATION (On Each VM)
+================================================================================
+
+1. LOGIN
+   username: k8sadmin
+   password: [your-password]
+
+2. VERIFY NETWORK
+   ip addr show ens18
+   ping -c 3 8.8.8.8
+   ping -c 3 google.com
+
+3. UPDATE SYSTEM
+   sudo apt update
+   sudo apt upgrade -y
+
+4. INSTALL QEMU GUEST AGENT
+   sudo apt install qemu-guest-agent -y
+   sudo systemctl enable qemu-guest-agent
+   sudo systemctl start qemu-guest-agent
+
+5. VERIFY HOSTNAME
+   hostname
+   # Should show: k8s-control (or worker-01/worker-02)
+
+6. TEST FROM PROXMOX
+   ssh k8sadmin@192.168.11.201
+   # Enter password - should work!
+
+================================================================================
+ADD SSH KEYS (Run from Proxmox Host After All VMs Are Ready)
+================================================================================
+
+# Copy SSH key to all VMs (will prompt for password once per VM):
+ssh-copy-id -i ~/.ssh/k8s_cluster k8sadmin@192.168.11.201
+ssh-copy-id -i ~/.ssh/k8s_cluster k8sadmin@192.168.11.202
+ssh-copy-id -i ~/.ssh/k8s_cluster k8sadmin@192.168.11.203
+
+# Test passwordless login:
+ssh k8s-control         # Should NOT ask for password
+ssh k8s-worker-01
+ssh k8s-worker-02
+
+# If working, copy installation scripts:
+scp /root/claude/k8s-platform/scripts/*.sh k8sadmin@192.168.11.201:~
+scp /root/claude/k8s-platform/scripts/*.sh k8sadmin@192.168.11.202:~
+scp /root/claude/k8s-platform/scripts/*.sh k8sadmin@192.168.11.203:~
+
+================================================================================
+IMPORTANT NOTES
+================================================================================
+
+✓ Use SAME username on all VMs: k8sadmin
+✓ Use SAME password on all VMs (easier management)
+✓ Each VM needs DIFFERENT hostname and IP
+✓ DO NOT install Docker or MicroK8s (we install our own)
+✓ DO NOT use LVM for storage (keep it simple)
+✓ Install OpenSSH server on all VMs
+✓ Install qemu-guest-agent after installation
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+Network not working?
+- Check: ip addr show ens18
+- Check: cat /etc/netplan/00-installer-config.yaml
+- Reapply: sudo netplan apply
+
+Can't SSH?
+- Check: sudo systemctl status sshd
+- Start: sudo systemctl start sshd
+
+Wrong IP assigned?
+- Edit: sudo nano /etc/netplan/00-installer-config.yaml
+- Apply: sudo netplan apply
+
+Forgot password?
+- Access via Proxmox console (VNC)
+- Reset from single-user mode
+
+================================================================================
+NEXT STEPS AFTER ALL 3 VMs ARE INSTALLED
+================================================================================
+
+1. Verify all VMs are accessible:
+   ssh k8s-control
+   ssh k8s-worker-01
+   ssh k8s-worker-02
+
+2. Run preparation script on each VM:
+   ssh k8s-control
+   sudo ./02-prepare-os.sh
+
+3. Run Kubernetes installation on each VM:
+   sudo ./03-install-kubernetes.sh
+
+4. Initialize control plane (only on VM 201):
+   sudo ./04-init-control-plane.sh
+
+5. Continue with k8s-platform installation guide
+
+================================================================================

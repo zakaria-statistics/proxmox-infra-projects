@@ -69,8 +69,9 @@ ls /var/lib/vz/template/iso/
 
 ### Download ISO
 ```bash
+curl -s https://releases.ubuntu.com/22.04/ | grep -o 'ubuntu-22.04.*-live-server-amd64.iso' | sort -u
 cd /var/lib/vz/template/iso/
-wget https://releases.ubuntu.com/22.04/ubuntu-22.04.3-live-server-amd64.iso
+wget https://releases.ubuntu.com/22.04/ubuntu-22.04.5-live-server-amd64.iso
 wget https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.2.0-amd64-netinst.iso
 ```
 

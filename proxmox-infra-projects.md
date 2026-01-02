@@ -89,7 +89,7 @@ This approach ensures you understand:
 - **Components:**
   - **k8s-mcp:** Kubernetes cluster management and operations
   - **docker-mcp:** Docker container operations and compose management
-  - **security-mcp:** Security scanning (trivy), policy checks, audit analysis
+  - **security-mcp:** Security scanning (GitGuardian API, trivy, gitleaks), secret detection across all repos, policy checks, audit analysis
   - **proxmox-mcp:** Proxmox VM/CT operations, resource monitoring
 - **Integration:** Each MCP server provides AI-assisted management for its respective platform
 - **Learning Path:**

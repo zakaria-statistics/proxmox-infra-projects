@@ -56,7 +56,7 @@ This approach ensures you understand:
 
 **RAM:** 6-8GB total | **vCPU:** 8 total
 
-### 3. DB Cluster (Stateful tier)
+### 3. DB Cluster (Stateful tier) !z! practice dbs outside kube !z!
 - **Type:** LXC (MongoDB/Postgres run fine in containers)
 - MongoDB replica set (3 instances) OR Postgres + Patroni
 - etcd for election/consensus practice
@@ -82,6 +82,21 @@ This approach ensures you understand:
 - Kali + vulnerable targets (DVWA, Metasploitable)
 - pfSense/OPNsense for firewall practice
 - **RAM:** 4-6GB | **vCPU:** 6
+
+### 6. MCP Servers (Integration Layer)
+- **Type:** Development project (runs on host/workstation)
+- **Purpose:** Custom MCP (Model Context Protocol) servers for infrastructure automation
+- **Components:**
+  - **k8s-mcp:** Kubernetes cluster management and operations
+  - **docker-mcp:** Docker container operations and compose management
+  - **security-mcp:** Security scanning (trivy), policy checks, audit analysis
+  - **proxmox-mcp:** Proxmox VM/CT operations, resource monitoring
+- **Integration:** Each MCP server provides AI-assisted management for its respective platform
+- **Learning Path:**
+  1. Study MCP specification and existing implementations
+  2. Build custom servers for each ecosystem
+  3. Integrate with Claude for intelligent infrastructure management
+- **No additional RAM:** Development tooling, not a running service
 
 ---
 
@@ -173,6 +188,14 @@ CI/CD (build) → K8s (run function) → DB Cluster (backup/ETL target)
 6. **Phase 5:** Establish isolated security lab (VMs)
    - Kali + targets with network segmentation
 
+7. **Phase 6:** Build MCP Servers (Parallel to other phases)
+   - Study MCP specification and protocol
+   - Build k8s-mcp (enhances Phase 2 K8s management)
+   - Build docker-mcp (enhances CI/CD operations)
+   - Build security-mcp (integrates with Phase 5 security lab)
+   - Build proxmox-mcp (manages underlying infrastructure)
+   - **Cross-cutting:** Can be developed alongside other phases as each platform is deployed
+
 ---
 
 ## Technology Stack
@@ -188,6 +211,7 @@ CI/CD (build) → K8s (run function) → DB Cluster (backup/ETL target)
 - **Databases:** MongoDB / PostgreSQL (StatefulSets)
 - **AI/ML:** Ollama, ChromaDB, Jupyter, LangChain
 - **Security:** Kali Linux, DVWA, Metasploitable, pfSense
+- **Integration:** MCP Servers (k8s-mcp, docker-mcp, security-mcp, proxmox-mcp)
 
 ### Advanced (Managed Abstractions - Phase 2b, Optional)
 - **Package Management:** Helm
@@ -197,4 +221,4 @@ CI/CD (build) → K8s (run function) → DB Cluster (backup/ETL target)
 
 ---
 
-*Last Updated: 2025-12-31*
+*Last Updated: 2026-01-02*

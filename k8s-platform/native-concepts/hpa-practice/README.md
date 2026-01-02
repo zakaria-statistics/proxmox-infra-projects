@@ -114,4 +114,59 @@ faas-cli deploy --image=myfunction
 
 ---
 
+## Additional Learning Resources
+
+### 📚 Comprehensive Guides
+
+- **[PRACTICE-SCENARIOS.md](./PRACTICE-SCENARIOS.md)** - Structured learning path with 6 hands-on scenarios
+  - Scenario 1: Basic HPA scaling
+  - Scenario 2: Resource requests impact
+  - Scenario 3: Cluster resource exhaustion
+  - Scenario 4: Rolling updates with constraints
+  - Scenario 5: HPA scale-up/down behavior
+  - Scenario 6: Metrics verification
+
+- **[RESOURCE-OPTIMIZATION-GUIDE.md](./RESOURCE-OPTIMIZATION-GUIDE.md)** - Production-ready resource optimization
+  - Understanding requests vs limits
+  - Right-sizing methodology
+  - Vertical Pod Autoscaler (VPA)
+  - Monitoring with Prometheus
+  - Cluster capacity planning
+  - Production best practices
+
+- **[CURRENT-ISSUE-FIX.md](./CURRENT-ISSUE-FIX.md)** - Troubleshooting rolling update deadlocks
+  - Rolling update resource constraints
+  - How to fix stuck rollouts
+  - Verification steps
+
+- **[RESOURCE-EXHAUSTION.md](./RESOURCE-EXHAUSTION.md)** - Deep dive into cluster capacity issues
+
+---
+
+## Quick Start Options
+
+### Option A: Quick Practice (Follow basic steps)
+```bash
+./01-install-metrics-server.sh  # Already done ✓
+kubectl apply -f 02-deploy-app.yaml
+kubectl apply -f 03-create-hpa.yaml
+./04-generate-load.sh
+./05-observe.sh  # In another terminal
+```
+
+### Option B: Structured Learning (Recommended)
+```bash
+# Follow the comprehensive practice scenarios
+cat PRACTICE-SCENARIOS.md
+# Start with Scenario 1
+```
+
+### Option C: Production Learning
+```bash
+# Study resource optimization for real-world use
+cat RESOURCE-OPTIMIZATION-GUIDE.md
+```
+
+---
+
 **Ready to start? Run:** `./01-install-metrics-server.sh`

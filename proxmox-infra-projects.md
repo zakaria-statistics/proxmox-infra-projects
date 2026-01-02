@@ -221,4 +221,40 @@ CI/CD (build) → K8s (run function) → DB Cluster (backup/ETL target)
 
 ---
 
+## Cloud Infrastructure Projects
+
+**See: `cloud-infra/` directory**
+
+After mastering native Kubernetes on Proxmox, extend your knowledge to cloud platforms (Azure AKS, AWS EKS, GCP GKE).
+
+**Cloud projects cover:**
+- **Provisioning:** Terraform (IaC for creating clusters)
+- **Configuration:** Ansible (cluster setup, add-ons, monitoring)
+- **DevOps:** CI/CD integration, GitOps concepts
+- **Architectures:** Native cloud, Hybrid (Proxmox + Cloud), Multi-cloud patterns
+
+**Key files:**
+- `cloud-infra/README.md` - Overview and quick start
+- `cloud-infra/docs/architectures.md` - Native/Hybrid/Multi-cloud patterns
+- `cloud-infra/docs/provisioning.md` - Terraform for Azure/AWS/GCP
+- `cloud-infra/docs/configuration.md` - Ansible for cluster configuration
+- `cloud-infra/docs/gitops.md` - GitOps concepts (learn native kubectl first)
+
+**Prerequisites:**
+- ✅ Complete Phase 2a (Native Kubernetes on Proxmox)
+- ✅ Understand Deployments, Services, Ingress, HPA
+- ✅ Comfortable with kubectl operations
+
+**Why cloud after on-prem:**
+```
+Proxmox (On-Prem)          Cloud (AKS/EKS/GKE)
+─────────────────          ───────────────────
+Learn fundamentals   →     Apply at scale
+Full control         →     Managed services
+Manual operations    →     Automated workflows
+Low cost             →     Higher cost, higher velocity
+```
+
+---
+
 *Last Updated: 2026-01-02*
